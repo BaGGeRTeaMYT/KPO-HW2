@@ -2,7 +2,6 @@ package hse_bank.Console.Processing.Commands.Decorators.ConcreteDecorators;
 
 import hse_bank.Console.Processing.Commands.Command;
 import hse_bank.Console.Processing.Commands.CommandInfo;
-import hse_bank.Console.Processing.Commands.CommandType;
 import hse_bank.Console.Processing.Commands.ConcreteCommands.CreateCommand;
 import hse_bank.Console.Processing.Commands.ConcreteCommands.DeleteCommand;
 import hse_bank.Console.Processing.Commands.ConcreteCommands.EditCommand;
@@ -14,7 +13,7 @@ import hse_bank.Console.Processing.Commands.Decorators.ConcreteDecorators.Readin
 import hse_bank.Console.Processing.Commands.Decorators.ConcreteDecorators.ReadingStrategies.Strategy;
 import hse_bank.MainClasses.CustomTypes.OperatingUnits;
 import hse_bank.MainClasses.Interfaces.BankAccount;
-import hse_bank.MainClasses.Managers.Id.IdOwner;
+import hse_bank.MainClasses.Interfaces.SomeObject;
 
 import java.util.Vector;
 
@@ -22,6 +21,11 @@ public class BankAccountDecorator extends CommandDecorator {
 
     public BankAccountDecorator(Command decoratedCommand, Vector<String> tokens) {
         super(decoratedCommand, tokens);
+    }
+
+    @Override
+    protected boolean checkElementType(SomeObject element) {
+        return element instanceof BankAccount;
     }
 
     private Integer getId() {
@@ -116,19 +120,19 @@ public class BankAccountDecorator extends CommandDecorator {
             }
             op.storage().addElement(bankAccount.getId(), bankAccount);
         } else if (decoratedCommand instanceof DeleteCommand) {
-            if (!elementExists(op, id)) {
-                decoratedCommand.printer().print("Объект с ID: " + id + " не существует.");
+            if (elementDoNotExist(op, id)) {
+                notFoundIdPrint(id);
                 return null;
             }
             op.storage().removeById(id);
             op.factory().getIdManager().releaseId(id);
             decoratedCommand.printer().print("Объект с ID: " + id + " успешно удалён.");
         } else if (decoratedCommand instanceof EditCommand) {
-            if (op.storage().getElementById(id) == null) {
-                decoratedCommand.printer().print("Объект с ID: " + id + " не существует.");
+            if (elementDoNotExist(op, id)) {
+                notFoundIdPrint(id);
                 return null;
             }
-            if (!(op.storage().getElementById(id) instanceof BankAccount)) {
+            if (!checkElementType(op.storage().getElementById(id))) {
                 decoratedCommand.printer().print("Объект с ID: " + id + " не является банковским аккаунтом.");
                 return null;
             }

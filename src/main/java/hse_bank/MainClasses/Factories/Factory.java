@@ -10,7 +10,7 @@ public interface Factory {
     BankAccount createBankAccount(String name);
     Category createCategory(int id, String type, String name);
     Category createCategory(String type, String name);
-    Operation createOperation(int id, String type, int bankAccountId, double amount, Category categoryId);
+    Operation createOperation(int id, int bankAccountId, double amount, Category categoryId);
     Operation createOperation(int bankAccountId, double amount, Category categoryId);
     IdManager getIdManager();
 }

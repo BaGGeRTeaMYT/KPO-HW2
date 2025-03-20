@@ -28,13 +28,27 @@ public class MyFactory implements Factory {
         this.printer = printer;
     }
 
-    public BankAccount createBankAccount(int id, String name, double balance) {
-        if (balance < 0) {
-            throw new IllegalArgumentException("Баланс не должен быть отрицательным.");
+    private void checkPositive(double number) {
+        if (number < 0) {
+            throw new IllegalArgumentException("Количество денег должно быть положительным.");
         }
+    }
+
+    private void checkType(String type) {
+        if (!type.equals("income") && !type.equals("expense")) {
+            throw new IllegalArgumentException(type + " не является доступным типом категории.");
+        }
+    }
+
+    private void checkId(int id) {
         if (!idManager.isAvailable(id)) {
             throw new IllegalArgumentException("ID " + id + " уже занято");
         }
+    }
+
+    public BankAccount createBankAccount(int id, String name, double balance) {
+        checkPositive(balance);
+        checkId(id);
         BankAccount account = new MyBankAccount(id, name, balance);
         idManager.reserveId(id, IdOwner.BANK_ACCOUNT);
         printer.print("Создан банковский аккаунт " + account.describe());
@@ -45,17 +59,10 @@ public class MyFactory implements Factory {
         return createBankAccount(idManager.getNextId(IdOwner.BANK_ACCOUNT), name, 0.0);
     }
 
-    private void checkData(String type, int id) {
-        if (!type.equals("income") && !type.equals("expense")) {
-            throw new IllegalArgumentException(type + " не является доступным типом категории.");
-        }
-        if (!idManager.isAvailable(id)) {
-            throw new IllegalArgumentException("ID " + id + " уже занято");
-        }
-    }
 
     public Category createCategory(int id, String type, String name) {
-        checkData(type, id);
+        checkId(id);
+        checkType(type);
         Category category = new MyCategory(id, type, name);
         idManager.reserveId(id, IdOwner.CATEGORY);
         printer.print("Создана категория " + category.describe());
@@ -66,22 +73,21 @@ public class MyFactory implements Factory {
         return createCategory(idManager.getNextId(IdOwner.CATEGORY), type, name);
     }
 
-    public Operation createOperation(int id, String type, int bankAccountId, double amount, Category categoryId) {
-        checkData(type, id);
+    @Override
+    public Operation createOperation(int id, int bankAccountId, double amount, Category categoryId) {
+        checkId(id);
         if (idManager.getOwner(bankAccountId) != IdOwner.BANK_ACCOUNT) {
             throw new IllegalArgumentException("Объект с ID " + bankAccountId + " не является банковским аккаунтом.");
         }
-        if (amount < 0) {
-            throw new IllegalArgumentException("Сумма операции не может быть отрицательной.");
-        }
-        Operation operation = new MyOperation(id, type, bankAccountId, amount, calendar.getDate(), categoryId);
+        checkPositive(amount);
+        Operation operation = new MyOperation(id, categoryId.getType(), bankAccountId, amount, calendar.getDate(), categoryId);
         idManager.reserveId(id, IdOwner.OPERATION);
         printer.print("Создана операция " + operation.describe());
         return operation;
     }
 
     public Operation createOperation(int bankAccountId, double amount, Category categoryId) {
-        return createOperation(idManager.getNextId(IdOwner.OPERATION), categoryId.getType(), bankAccountId, amount, categoryId);
+        return createOperation(idManager.getNextId(IdOwner.OPERATION), bankAccountId, amount, categoryId);
     }
 
     @Override

@@ -5,11 +5,11 @@ import hse_bank.MainClasses.Interfaces.Operation;
 
 public class MyOperation implements Operation {
     private final int id;
-    private final String type; // "income" или "expense"
+    private String type; // "income" или "expense"
     private final int bankAccountId;
     private final double amount;
     private final String date;
-    private final Category categoryId;
+    private Category categoryId;
 
     public MyOperation(int id, String type, int bankAccountId, double amount, String date, Category categoryId) {
         this.id = id;
@@ -48,6 +48,12 @@ public class MyOperation implements Operation {
     @Override
     public Category getCategoryId() {
         return categoryId;
+    }
+
+    @Override
+    public void setCategory(Category category) {
+        this.type = category.getType();
+        this.categoryId = category;
     }
 
     @Override

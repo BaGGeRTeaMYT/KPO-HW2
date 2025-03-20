@@ -7,4 +7,5 @@ public interface Operation extends SomeObject {
     double getAmount();
     String getDate();
     Category getCategoryId();
+    void setCategory(Category category);
 }

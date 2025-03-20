@@ -2,8 +2,8 @@ package hse_bank.Console.Processing.Commands.Decorators;
 
 import hse_bank.Console.Output.Printer;
 import hse_bank.Console.Processing.Commands.Command;
-import hse_bank.Console.Processing.Commands.CommandType;
 import hse_bank.MainClasses.CustomTypes.OperatingUnits;
+import hse_bank.MainClasses.Interfaces.SomeObject;
 
 import java.util.Vector;
 
@@ -20,12 +20,18 @@ public abstract class CommandDecorator implements Command {
         return decoratedCommand.printer();
     }
 
-    protected boolean elementExists(OperatingUnits op, int id) {
-        return op.storage().getElementById(id) != null;
+    protected boolean elementDoNotExist(OperatingUnits op, int id) {
+        return op.storage().getElementById(id) == null;
     }
+
+    protected abstract boolean checkElementType(SomeObject element);
 
     protected Integer invalidArgsCnt() {
         decoratedCommand.printer().print("Некорректное количество аргументов: " + tokens.size());
         return null;
+    }
+
+    protected void notFoundIdPrint(int id) {
+        printer().print("Объект с ID: " + id + " не существует.");
     }
 }

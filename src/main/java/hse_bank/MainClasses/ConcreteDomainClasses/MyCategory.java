@@ -15,7 +15,7 @@ public class MyCategory implements Category {
 
     @Override
     public int getId() {
-        return 0;
+        return id;
     }
 
     @Override

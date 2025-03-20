@@ -12,8 +12,8 @@ import hse_bank.Console.Processing.Commands.Decorators.ConcreteDecorators.Readin
 import hse_bank.Console.Processing.Commands.Decorators.ConcreteDecorators.ReadingStrategies.ConcreteStrategies.Category.ShortCreate;
 import hse_bank.Console.Processing.Commands.Decorators.ConcreteDecorators.ReadingStrategies.Strategy;
 import hse_bank.MainClasses.CustomTypes.OperatingUnits;
-import hse_bank.MainClasses.Interfaces.BankAccount;
 import hse_bank.MainClasses.Interfaces.Category;
+import hse_bank.MainClasses.Interfaces.SomeObject;
 
 import java.util.Vector;
 
@@ -21,6 +21,11 @@ public class CategoryDecorator extends CommandDecorator {
 
     public CategoryDecorator(Command decoratedCommand, Vector<String> tokens) {
         super(decoratedCommand, tokens);
+    }
+
+    @Override
+    protected boolean checkElementType(SomeObject element) {
+        return element instanceof Category;
     }
 
     @Override
@@ -71,26 +76,26 @@ public class CategoryDecorator extends CommandDecorator {
             }
             op.storage().addElement(category.getId(), category);
         } else if (decoratedCommand instanceof DeleteCommand) {
-            if (!elementExists(op, id)) {
-                printer().print("Объект с ID: " + id + " не существует.");
+            if (elementDoNotExist(op, id)) {
+                notFoundIdPrint(id);
                 return null;
             }
             op.storage().removeById(id);
             op.factory().getIdManager().releaseId(id);
-            decoratedCommand.printer().print("Объект с ID: " + id + " успешно удалён.");
+            printer().print("Объект с ID: " + id + " успешно удалён.");
         } else if (decoratedCommand instanceof EditCommand) {
-            if (!elementExists(op, id)) {
-                decoratedCommand.printer().print("Объект с ID: " + id + " не существует.");
+            if (elementDoNotExist(op, id)) {
+                notFoundIdPrint(id);
                 return null;
             }
-            if (!(op.storage().getElementById(id) instanceof Category)) {
-                decoratedCommand.printer().print("Объект с ID: " + id + " не является категорией.");
+            if ( !checkElementType(op.storage().getElementById(id) )) {
+                printer().print("Объект с ID: " + id + " не является категорией.");
                 return null;
             }
             category = (Category) op.storage().getElementById(id);
             category.setType(type);
             category.setName(name);
-            decoratedCommand.printer().print("Изменено на: " + category.describe());
+            printer().print("Изменено на: " + category.describe());
         }
 
 
