@@ -1,11 +1,17 @@
 package hse_bank.Console.Processing.Commands.Decorators.ConcreteDecorators;
 
 import hse_bank.Console.Processing.Commands.Command;
+import hse_bank.Console.Processing.Commands.CommandInfo;
 import hse_bank.Console.Processing.Commands.CommandType;
 import hse_bank.Console.Processing.Commands.ConcreteCommands.CreateCommand;
 import hse_bank.Console.Processing.Commands.ConcreteCommands.DeleteCommand;
 import hse_bank.Console.Processing.Commands.ConcreteCommands.EditCommand;
 import hse_bank.Console.Processing.Commands.Decorators.CommandDecorator;
+import hse_bank.Console.Processing.Commands.Decorators.ConcreteDecorators.ReadingStrategies.ConcreteStrategies.BankAccount.Delete;
+import hse_bank.Console.Processing.Commands.Decorators.ConcreteDecorators.ReadingStrategies.ConcreteStrategies.BankAccount.Edit;
+import hse_bank.Console.Processing.Commands.Decorators.ConcreteDecorators.ReadingStrategies.ConcreteStrategies.BankAccount.LongCreate;
+import hse_bank.Console.Processing.Commands.Decorators.ConcreteDecorators.ReadingStrategies.ConcreteStrategies.BankAccount.ShortCreate;
+import hse_bank.Console.Processing.Commands.Decorators.ConcreteDecorators.ReadingStrategies.Strategy;
 import hse_bank.MainClasses.CustomTypes.OperatingUnits;
 import hse_bank.MainClasses.Interfaces.BankAccount;
 import hse_bank.MainClasses.Managers.Id.IdOwner;
@@ -67,19 +73,39 @@ public class BankAccountDecorator extends CommandDecorator {
 
     @Override
     public Integer execute(OperatingUnits op) {
-        String name = getName();
-        Integer id = getId();
-        Double balance = getBalance();
+        Strategy strategy;
         if (decoratedCommand instanceof CreateCommand) {
-            if (tokens.size() != 1 && tokens.size() != 3) {
+            if (tokens.size() == 1) {
+                strategy = new ShortCreate(printer());
+            } else if (tokens.size() == 3) {
+                strategy = new LongCreate(printer());
+            } else {
                 return invalidArgsCnt();
             }
+        } else if (decoratedCommand instanceof DeleteCommand) {
+            if (tokens.size() == 1) {
+                strategy = new Delete(printer());
+            } else {
+                return invalidArgsCnt();
+            }
+        } else {
+            if (tokens.size() == 2) {
+                strategy = new Edit(printer());
+            } else {
+                return invalidArgsCnt();
+            }
+        }
+        CommandInfo info = strategy.process(tokens);
+        String name = info.name();
+        Integer id = info.id();
+        Double balance = info.amount();
+        if (decoratedCommand instanceof CreateCommand) {
             BankAccount bankAccount = null;
             if (id == null && balance == null) {
                 bankAccount = op.factory().createBankAccount(name);
             } else if (id != null && balance != null) {
                 try {
-                    bankAccount = op.factory().createBankAccount(id, tokens.elementAt(1), balance);
+                    bankAccount = op.factory().createBankAccount(id, name, balance);
                 } catch (IllegalArgumentException e) {
                     decoratedCommand.printer().print(e.getMessage());
                     return null;
@@ -90,10 +116,7 @@ public class BankAccountDecorator extends CommandDecorator {
             }
             op.storage().addElement(bankAccount.getId(), bankAccount);
         } else if (decoratedCommand instanceof DeleteCommand) {
-            if (tokens.size() != 1) {
-                return invalidArgsCnt();
-            }
-            if (op.storage().getElementById(id) == null) {
+            if (!elementExists(op, id)) {
                 decoratedCommand.printer().print("Объект с ID: " + id + " не существует.");
                 return null;
             }
@@ -101,9 +124,6 @@ public class BankAccountDecorator extends CommandDecorator {
             op.factory().getIdManager().releaseId(id);
             decoratedCommand.printer().print("Объект с ID: " + id + " успешно удалён.");
         } else if (decoratedCommand instanceof EditCommand) {
-            if (tokens.size() != 2) {
-                return invalidArgsCnt();
-            }
             if (op.storage().getElementById(id) == null) {
                 decoratedCommand.printer().print("Объект с ID: " + id + " не существует.");
                 return null;
@@ -112,10 +132,8 @@ public class BankAccountDecorator extends CommandDecorator {
                 decoratedCommand.printer().print("Объект с ID: " + id + " не является банковским аккаунтом.");
                 return null;
             }
-            BankAccount bankAccount = (BankAccount)op.storage().getElementById(id);
-            bankAccount.setBalance(balance);
-            op.storage().addElement(id, bankAccount);
-            decoratedCommand.printer().print("Изменено на: " + bankAccount.describe());
+            ((BankAccount)op.storage().getElementById(id)).setBalance(balance);
+            decoratedCommand.printer().print("Изменено на: " + ((BankAccount)op.storage().getElementById(id)).describe());
         }
         return 0;
     }

@@ -29,6 +29,16 @@ public class MyCategory implements Category {
     }
 
     @Override
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
     public String describe() {
         return "{id: " + id + ", type: " + type + ", name: " + name + "}";
     }
